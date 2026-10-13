@@ -6,7 +6,7 @@ branding:
   color: green
 inputs:
   status:
-    description: How the job ended. Pass `${{ job.status }}` and run the step with `if: always()`.
+    description: "How the job ended. Pass `${{ job.status }}` and run the step with `if: always()`."
     required: true
   alert-url:
     description: Public HTTPS webhook (Slack, Discord or any) that receives a JSON when a run is missed or fails.

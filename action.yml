@@ -1,0 +1,64 @@
+name: HookPulse check-in
+description: Alert when a scheduled workflow stops running or fails. One step at the end of the job, no secret.
+author: HookPulse
+branding:
+  icon: activity
+  color: green
+inputs:
+  status:
+    description: How the job ended. Pass `${{ job.status }}` and run the step with `if: always()`.
+    required: true
+  alert-url:
+    description: Public HTTPS webhook (Slack, Discord or any) that receives a JSON when a run is missed or fails.
+    required: false
+    default: ""
+  hookpulse-key:
+    description: Optional HookPulse setup key (`hpk_...`), from a secret. The monitor then belongs to your account and alerts by e-mail.
+    required: false
+    default: ""
+  grace-sec:
+    description: Allowed delay after each scheduled time, in seconds (60 to 86400). Cover the GitHub delay and the job duration.
+    required: false
+    default: "3600"
+  interval-sec:
+    description: For a job without a schedule, the tolerated silence in seconds (60 to 86400).
+    required: false
+    default: ""
+  name:
+    description: Name of this job in the monitor, when one workflow has several jobs with this step. Default is the job id.
+    required: false
+    default: ""
+  url:
+    description: HookPulse address.
+    required: false
+    default: https://hookpulse.net
+  fail-on-error:
+    description: Fail this step when HookPulse cannot record the run. By default the check-in never breaks your job.
+    required: false
+    default: "false"
+outputs:
+  state:
+    description: State of the monitor after this run (ok, waiting, late, paused).
+    value: ${{ steps.checkin.outputs.state }}
+  status-page:
+    description: Public status page of the repository's monitors (only without a key).
+    value: ${{ steps.checkin.outputs.status-page }}
+  badge:
+    description: SVG badge of this monitor (only without a key).
+    value: ${{ steps.checkin.outputs.badge }}
+runs:
+  using: composite
+  steps:
+    - id: checkin
+      shell: bash
+      env:
+        HP_STATUS: ${{ inputs.status }}
+        HP_ALERT_URL: ${{ inputs.alert-url }}
+        HP_KEY: ${{ inputs.hookpulse-key }}
+        HP_GRACE: ${{ inputs.grace-sec }}
+        HP_INTERVAL: ${{ inputs.interval-sec }}
+        HP_JOB: ${{ inputs.name || github.job }}
+        HP_URL: ${{ inputs.url }}
+        HP_SCHEDULE: ${{ github.event.schedule }}
+        HP_FAIL: ${{ inputs.fail-on-error }}
+      run: bash "$GITHUB_ACTION_PATH/checkin.sh"
